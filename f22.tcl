@@ -1,0 +1,76 @@
+#create simulator obj
+
+set ns [new Simulator]
+
+#define colours for network flow
+set nf [open out.nam w]
+
+$ns namtrace-all $nf
+
+#define a finish procedure
+proc finish {} {
+global ns nf
+$ns flush-trace
+close $nf
+exec nam out.nam &
+exit 0
+}
+$ns color 1 Blue
+$ns color 2 Red
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+set n4 [$ns node]
+set n5 [$ns node]
+set n6 [$ns node]
+
+$ns duplex-link $n0 $n1 2Mb 100ms DropTail 
+$ns duplex-link $n1 $n2 2Mb 100ms DropTail 
+$ns duplex-link $n3 $n1 2Mb 100ms DropTail 
+#$ns duplex-link $n2 $n4 2Mb 100ms DropTail 
+$ns duplex-link $n1 $n5 2Mb 100ms DropTail
+$ns duplex-link $n5 $n4 2Mb 100ms DropTail
+$ns duplex-link $n2 $n6 2Mb 100ms DropTail
+$ns duplex-link $n6 $n4 2Mb 100ms DropTail
+
+
+$ns duplex-link-op $n0 $n1 orient right-down
+$ns duplex-link-op $n1 $n2 orient right-up
+#$ns duplex-link-op $n2 $n4 orient right
+$ns duplex-link-op $n3 $n1 orient right-up
+$ns duplex-link-op $n1 $n5 orient right-down
+$ns duplex-link-op $n5 $n4 orient right-up
+$ns duplex-link-op $n2 $n6 orient right
+$ns duplex-link-op $n6 $n4 orient right-down
+
+set tcp0 [new Agent/TCP]
+$ns attach-agent $n0 $tcp0
+set ftp0 [new Application/FTP]
+$ftp0 attach-agent $tcp0
+$tcp0 set packet_size_ 512
+#$tcp0 set fid_ 0
+
+set tcp1 [new Agent/TCP]
+$ns attach-agent $n3 $tcp1
+set ftp1 [new Application/FTP]
+$ftp1 attach-agent $tcp1
+$tcp1 set packet_size_ 512
+#$tcp1 set fid_ 1
+
+
+set null0 [new Agent/TCPSink]
+$ns attach-agent $n4 $null0
+$ns connect $tcp0 $null0
+set null1 [new Agent/TCPSink]
+$ns attach-agent $n4 $null1
+$ns connect $tcp1 $null1
+
+
+
+$ns at 1.0 "$ftp0 start"
+$ns at 2.5 "$ftp1 start"
+$ns at 29.5 "$ftp0 stop"
+$ns at 30.0 "finish"
+
+$ns run
